@@ -14,10 +14,10 @@ Dieses Arduino-Programm verwendet einen ESP32-Mikrocontroller und LEDs, um Umgeb
 Um dieses Programm auszuführen, müssen Sie folgende Arduino-Bibliotheken installieren:
 
 - FastLED: [https://github.com/FastLED/FastLED](https://github.com/FastLED/FastLED)
-- SHT2x: [https://github.com/practicalarduino/SHT2x](https://github.com/practicalarduino/SHT2x)
+- SHT2x: [https://github.com/robtillaart/SHT2x](https://github.com/robtillaart/SHT2x)
 
 ## Anzeigemodi
-
+ 
 Das Programm verfügt über drei Anzeigemodi:
 
 1. **Temperaturmodus:** In diesem Modus werden die LEDs entsprechend der gemessenen Temperatur angezeigt. Je wärmer es ist, desto mehr LEDs werden eingeschaltet.
