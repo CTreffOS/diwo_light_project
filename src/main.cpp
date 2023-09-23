@@ -5,6 +5,7 @@
 #define NUM_LEDS 20
 #define DATA_PIN 23
 #define MICROPHONE_PIN 13
+#define SHT_POWER_PIN 19
 
 CRGB leds[NUM_LEDS];
 SHT2x sht;
@@ -79,8 +80,6 @@ void setup()
 {
   Serial.begin(115200);
   Serial.println("Startup...");
-  pinMode(19, OUTPUT);
-  digitalWrite(19, HIGH);
 
   Serial.println("Startup: fastled...");
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS); // GRB ordering is typical
@@ -88,21 +87,23 @@ void setup()
   Serial.println("Startup: pin mode...");
   pinMode(MICROPHONE_PIN, INPUT);
 
-  Serial.println("Startup: SHT LIB...");
-  Serial.print("SHT2x_LIB_VERSION: \t");
-  Serial.println(SHT2x_LIB_VERSION);
+  Serial.println("Startup: SHT...");
+  pinMode(SHT_POWER_PIN, OUTPUT);
+  digitalWrite(SHT_POWER_PIN, HIGH);
   sht.begin();
+
+  delay(100);
 
   Serial.println("Startup: done.");
 }
 
-void activateLEDs(CRGB colors[], int numToActivate)
+void activateLEDs(CRGB colors[], float value, float min, float max)
 {
-  // Stelle sicher, dass die Anzahl der anzusteuernden LEDs nicht größer ist als NUM_LEDS
-  if (numToActivate > NUM_LEDS)
-  {
-    numToActivate = NUM_LEDS;
-  }
+  // Anzahl der zu aktivierenden LEDs herausfinden
+  int numToActivate = map((long)value * 1000, min * 1000, max * 1000, 0, 20);
+  
+    // Stelle sicher, dass die Anzahl der anzusteuernden LEDs nicht ausserhalb von 0 bis NUM_LEDS ist
+  numToActivate = constrain(numToActivate, 0, NUM_LEDS);
 
   // Setze alle LEDs auf Schwarz (ausgeschaltet)
   for (int i = numToActivate; i < NUM_LEDS; i++)
@@ -120,14 +121,6 @@ void activateLEDs(CRGB colors[], int numToActivate)
   FastLED.show();
 }
 
-void tempMode()
-{
-  bool sht_status = sht.read();
-  float temp = sht.getTemperature();
-  int ledsOn = map((long)temp, 10, 35, 0, 20);
-  activateLEDs(tempColors, ledsOn);
-}
-
 float volumeSmoothed = 0;
 
 void loudMode()
@@ -135,39 +128,43 @@ void loudMode()
   uint16_t volume = analogRead(MICROPHONE_PIN);
   float factor = volume > volumeSmoothed ? 1 : 0.005;
   volumeSmoothed = volumeSmoothed * (1.0 - factor) + ((float)volume) * factor;
-  int ledsOn = map((long)volumeSmoothed, 310, 350, 0, 20);
-  activateLEDs(loudColors, ledsOn);
+
+  Serial.print("Lautstaerke: ");
+  Serial.println(volumeSmoothed);
+
+  activateLEDs(loudColors, volumeSmoothed, 300, 340);
+}
+
+void tempMode()
+{
+  bool sht_status = sht.read();
+  float temp = sht.getTemperature();
+
+  Serial.print("Temperatur: ");
+  Serial.println(temp);
+
+  activateLEDs(tempColors, temp, 10, 35);
 }
 
 void humidityMode()
 {
   bool sht_status = sht.read();
   float humid = sht.getHumidity();
-  int ledsOn = map((long)humid, 20, 100, 0, 20);
+
+  Serial.print("Luftfeuchte: ");
   Serial.println(humid);
-  activateLEDs(humidityColors, ledsOn);
+
+  activateLEDs(humidityColors, humid, 20, 100);
 }
 
 void loop()
 {
-  unsigned long startTime = millis(); // Startzeit der Schleife
+  unsigned long currentStepMillis = millis() % 30000;
 
-  // Die Schleife soll für 15 Sekunden laufen (15.000 Millisekunden)
-  while (millis() - startTime < 15000)
-  {
-    // Rufe hier deine Funktion auf, die in der Schleife ausgeführt werden soll
+  if (currentStepMillis < 10000)
     loudMode();
-  }
-  // Diese Schleife soll ebenfalls für weitere 15 Sekunden laufen, also bis 30.000ms
-  while (millis() - startTime < 30000)
-  {
-    // Rufe hier deine Funktion auf, die in der Schleife ausgeführt werden soll
+  else if (currentStepMillis < 20000)
     tempMode();
-  }
-  // Diese Schleife soll ebenfalls für weitere 15 Sekunden laufen, also bis 45.000ms
-  while (millis() - startTime < 45000)
-  {
-    // Rufe hier deine Funktion auf, die in der Schleife ausgeführt werden soll
+  else
     humidityMode();
-  }
 }
