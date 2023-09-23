@@ -101,8 +101,8 @@ void activateLEDs(CRGB colors[], float value, float min, float max)
 {
   // Anzahl der zu aktivierenden LEDs herausfinden
   int numToActivate = map((long)value * 1000, min * 1000, max * 1000, 0, 20);
-  
-    // Stelle sicher, dass die Anzahl der anzusteuernden LEDs nicht ausserhalb von 0 bis NUM_LEDS ist
+
+  // Stelle sicher, dass die Anzahl der anzusteuernden LEDs nicht ausserhalb von 0 bis NUM_LEDS ist
   numToActivate = constrain(numToActivate, 0, NUM_LEDS);
 
   // Setze alle LEDs auf Schwarz (ausgeschaltet)
@@ -123,6 +123,7 @@ void activateLEDs(CRGB colors[], float value, float min, float max)
 
 float volumeSmoothed = 0;
 
+// Anzeigemodus für die Lautstärke
 void loudMode()
 {
   uint16_t volume = analogRead(MICROPHONE_PIN);
@@ -135,6 +136,7 @@ void loudMode()
   activateLEDs(loudColors, volumeSmoothed, 300, 340);
 }
 
+// Anzeigemodus für die Temperatur
 void tempMode()
 {
   bool sht_status = sht.read();
@@ -146,6 +148,7 @@ void tempMode()
   activateLEDs(tempColors, temp, 10, 35);
 }
 
+// Anzeigemodus für die Luftfeuchtigkeit
 void humidityMode()
 {
   bool sht_status = sht.read();
@@ -159,12 +162,14 @@ void humidityMode()
 
 void loop()
 {
+  // Erfasse die aktuelle Millisekunde seit dem Start des Programms und berechne den aktuellen Schritt innerhalb eines 30-Sekunden-Zyklus.
   unsigned long currentStepMillis = millis() % 30000;
 
+  // Je nachdem, in welchem Teil des 30-Sekunden-Zyklus wir uns befinden, wird der entsprechende Anzeigemodus aufgerufen.
   if (currentStepMillis < 10000)
-    loudMode();
+    loudMode(); // In den ersten 10 Sekunden des Zyklus wird der "Lautstärke"-Anzeigemodus aufgerufen.
   else if (currentStepMillis < 20000)
-    tempMode();
+    tempMode(); // In den nächsten 10 Sekunden wird der "Temperatur"-Anzeigemodus aufgerufen.
   else
-    humidityMode();
+    humidityMode(); // In den letzten 10 Sekunden wird der "Luftfeuchtigkeit"-Anzeigemodus aufgerufen.
 }
